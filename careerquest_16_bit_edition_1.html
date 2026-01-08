@@ -1,0 +1,550 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CareerQuest: 16-Bit Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #202028;
+            --card-bg: #2d2d38;
+            --accent: #50b5ff;
+            --accent-dark: #0066cc;
+            --text-main: #ffffff;
+            --border-color: #ffffff;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow-x: hidden;
+            font-size: 18px;
+            background-image: 
+                linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+        }
+
+        /* Typography */
+        h1, h2, h3, .pixel-header {
+            font-family: 'Press Start 2P', cursive;
+            line-height: 1.6;
+            text-transform: uppercase;
+        }
+        
+        h1 { font-size: 1.2rem; }
+        h2 { font-size: 1rem; }
+        h3 { font-size: 0.8rem; }
+
+        /* Pixel Box Styling */
+        .pixel-box {
+            background-color: var(--card-bg);
+            border: 4px solid var(--border-color);
+            box-shadow: 6px 6px 0px #000000;
+            position: relative;
+        }
+
+        .pixel-box::after {
+            content: " ";
+            position: absolute;
+            top: -4px; left: -4px; right: -4px; bottom: -4px;
+            box-shadow: inset 0 0 0 4px var(--border-color);
+            pointer-events: none;
+        }
+
+        /* Pixel Inputs */
+        .pixel-input {
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            background: #000;
+            border: 2px solid #fff;
+            color: #0f0;
+            box-shadow: inset 2px 2px 0px rgba(0,0,0,0.5);
+        }
+        .pixel-input:focus {
+            outline: none;
+            background: #111;
+            border-color: var(--accent);
+        }
+
+        /* Pixel Buttons */
+        .pixel-btn {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.7rem;
+            border: 2px solid #fff;
+            background: #3b3b4f;
+            color: #fff;
+            box-shadow: 4px 4px 0px #000;
+            transition: transform 0.1s, box-shadow 0.1s;
+            cursor: pointer;
+            text-transform: uppercase;
+            display: inline-block;
+            text-align: center;
+            text-decoration: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .pixel-btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0px 0px 0px #000;
+        }
+        .pixel-btn-primary {
+            background: var(--accent-dark);
+        }
+        .pixel-btn-danger {
+            background: #cc0000;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin: 10px 0;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            background: #000;
+            border: 2px solid #fff;
+            cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 10px;
+            background: var(--accent);
+            border: 2px solid #fff;
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 2px 2px 0 #000;
+        }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 0.3s steps(5) forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* CRT Scanline Overlay */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 16px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #fff; border: 4px solid #000; }
+        
+        /* Utilities */
+        .text-shadow { text-shadow: 2px 2px 0 #000; }
+        .chip { cursor: pointer; user-select: none; }
+        .chip:hover { background-color: #444; }
+        .chip.active { background-color: #cc0000; color: white; border-color: white; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col pb-10">
+    <div class="scanlines"></div>
+
+    <!-- Header -->
+    <header class="px-4 py-6 flex justify-between items-center border-b-4 border-white bg-slate-900 sticky top-0 z-40 shadow-[0_4px_0_rgba(0,0,0,0.5)]">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="app.reset()">
+            <div class="bg-blue-600 p-1 border-2 border-white shadow-[2px_2px_0_#000]">
+                <i data-lucide="gamepad-2" class="text-white w-6 h-6"></i>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-sm md:text-lg text-white pixel-header text-shadow tracking-widest">CAREER<span class="text-cyan-400">QUEST</span></span>
+                <span class="text-[10px] text-slate-400 font-mono leading-none">VER 2.1.4 [LIVE]</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <div id="api-indicator" class="hidden md:flex items-center gap-2 px-2 py-1 border-2 border-slate-600 bg-black text-xs font-mono">
+                <div class="w-2 h-2 bg-red-500" id="status-dot"></div>
+                <span id="status-text" class="uppercase">OFFLINE</span>
+            </div>
+            <button onclick="app.toggleSettings()" class="pixel-btn p-2">
+                <i data-lucide="settings" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm fade-in">
+        <div class="w-full max-w-md pixel-box p-6">
+            <div class="flex justify-between items-start mb-6">
+                <h2 class="text-yellow-400 text-shadow">SYSTEM CONFIG</h2>
+                <button onclick="app.toggleSettings()" class="text-white hover:text-red-500 font-bold text-xl">X</button>
+            </div>
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm uppercase text-cyan-400 mb-2 font-bold">API Key (Gemini)</label>
+                    <input type="password" id="api-key" placeholder="AIzaSy..." class="w-full pixel-input p-2">
+                    <p class="text-sm text-red-400 mt-2 font-bold">> REQUIRED FOR OPERATION.</p>
+                </div>
+                <div>
+                    <label class="block text-sm uppercase text-purple-400 mb-2 font-bold">Model Core</label>
+                    <input type="text" id="model-name" value="gemini-1.5-flash" class="w-full pixel-input p-2">
+                </div>
+                <button onclick="app.saveSettings()" class="w-full pixel-btn pixel-btn-primary py-4 flex justify-center items-center gap-2 mt-4">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    <span>SAVE DATA</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main id="app-container" class="flex-grow flex flex-col items-center p-4 w-full max-w-6xl mx-auto mt-4">
+        
+        <!-- VIEW 1: CHARACTER BUILD -->
+        <div id="view-stats" class="w-full flex flex-col lg:flex-row gap-8 items-start pt-4">
+            <div class="w-full lg:w-1/2 pixel-box p-6 order-2 lg:order-1">
+                <div class="flex justify-between items-center mb-6 border-b-2 border-dashed border-slate-600 pb-4">
+                    <div>
+                        <h2 class="text-cyan-400 text-shadow mb-1">CHARACTER BUILD</h2>
+                        <p class="text-slate-400 text-sm">> Allocate attribute points.</p>
+                    </div>
+                    <div class="pixel-btn px-2 py-1 text-[10px]">1/3</div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="stat-control">
+                        <div class="flex justify-between text-lg mb-1">
+                            <span class="text-white">TECH</span>
+                            <span id="val-tech" class="text-cyan-400">50</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="50" oninput="app.updateStat('tech', this.value)">
+                    </div>
+                    <div class="stat-control">
+                        <div class="flex justify-between text-lg mb-1">
+                            <span class="text-white">LEADERSHIP</span>
+                            <span id="val-lead" class="text-cyan-400">50</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="50" oninput="app.updateStat('lead', this.value)">
+                    </div>
+                    <div class="stat-control">
+                        <div class="flex justify-between text-lg mb-1">
+                            <span class="text-white">CREATIVITY</span>
+                            <span id="val-create" class="text-cyan-400">50</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="50" oninput="app.updateStat('create', this.value)">
+                    </div>
+                    <div class="stat-control">
+                        <div class="flex justify-between text-lg mb-1">
+                            <span class="text-white">CHARISMA</span>
+                            <span id="val-comm" class="text-cyan-400">50</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="50" oninput="app.updateStat('comm', this.value)">
+                    </div>
+                    <div class="stat-control">
+                        <div class="flex justify-between text-lg mb-1">
+                            <span class="text-white">INTELLECT</span>
+                            <span id="val-anal" class="text-cyan-400">50</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="50" oninput="app.updateStat('anal', this.value)">
+                    </div>
+
+                    <div class="pt-4 border-t-2 border-dashed border-slate-600">
+                        <label class="block text-sm uppercase text-red-400 font-bold pixel-header mb-4">DEBUFFS (Weaknesses)</label>
+                        <div id="weakness-container" class="flex flex-wrap gap-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full lg:w-1/2 flex flex-col items-center justify-center order-1 lg:order-2 mb-6 lg:mb-0">
+                <div class="relative p-2 bg-black border-4 border-slate-600 shadow-[0_0_0_4px_#000]">
+                    <div class="absolute top-0 left-0 bg-red-500 text-white text-[10px] px-1 font-bold">REC</div>
+                    <canvas id="radarCanvas" width="300" height="300" class="w-full h-full bg-[#001100]"></canvas>
+                    <div class="absolute inset-0 bg-[linear-gradient(rgba(0,255,0,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,0,0.1)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+                </div>
+                <button onclick="app.nextStep(2)" class="w-full max-w-xs mt-8 pixel-btn pixel-btn-primary py-4 flex items-center justify-center gap-2 text-sm">
+                    <span>CONFIRM STATS</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- VIEW 2: LOGISTICS -->
+        <div id="view-logistics" class="hidden w-full max-w-2xl pixel-box p-6 md:p-8 mt-4">
+            <div class="flex justify-between items-center mb-8 border-b-4 border-slate-700 pb-4">
+                <h2 class="text-purple-400 text-shadow">MISSION PARAMETERS</h2>
+                <div class="pixel-btn px-2 py-1 text-[10px]">2/3</div>
+            </div>
+            
+            <div class="space-y-8">
+                <div>
+                    <label class="block text-sm uppercase text-slate-300 mb-2 font-bold pixel-header">Base Location</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="location-input" placeholder="CITY, REGION" class="w-full pixel-input p-3 pl-4 uppercase">
+                        <button id="gps-btn" type="button" onclick="app.geoLocate()" class="pixel-btn px-4 bg-slate-700 flex items-center justify-center">
+                            <i data-lucide="crosshair" class="w-5 h-5 pointer-events-none"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-red-400 mt-2 font-bold">> CRITICAL: RESULTS WILL BE LOCKED TO THIS ZONE.</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm uppercase text-slate-300 mb-2 font-bold pixel-header">Loot (Annual Gold)</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-3 text-green-500 font-bold">$</span>
+                        <input type="number" id="pay-input" placeholder="100000" class="w-full pixel-input p-3 pl-8">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm uppercase text-slate-300 mb-2 font-bold pixel-header">Skill Tree</label>
+                    <div class="bg-black border-2 border-white p-3 flex flex-wrap gap-2 min-h-[60px]" id="tags-container">
+                        <input type="text" id="tag-input" placeholder="ADD SKILL..." class="bg-transparent outline-none text-white flex-1 min-w-[120px] px-2 py-1 font-mono uppercase">
+                    </div>
+                </div>
+
+                <div class="flex gap-4 pt-4">
+                    <button onclick="app.nextStep(1)" class="flex-1 pixel-btn py-4 bg-slate-700 text-slate-300">BACK</button>
+                    <button onclick="app.startQuest()" class="flex-[2] pixel-btn pixel-btn-primary py-4 flex justify-center items-center gap-2">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                        <span>FIND QUEST</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 3: RESULTS -->
+        <div id="view-results" class="hidden w-full mt-4">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 border-b-4 border-white pb-4 gap-4 bg-slate-900 p-4 shadow-[4px_4px_0_#000]">
+                <div>
+                    <h2 class="text-2xl text-white text-shadow mb-2">QUEST BOARD</h2>
+                    <p class="text-slate-400 text-sm">> Live data from Neural Net.</p>
+                </div>
+                <div class="flex gap-3 w-full md:w-auto">
+                    <button onclick="app.nextStep(2)" class="flex-1 md:flex-none pixel-btn px-4 py-2 text-xs">EDIT</button>
+                    <button onclick="app.startQuest()" class="flex-1 md:flex-none pixel-btn px-4 py-2 text-cyan-400 border-cyan-400 text-xs flex items-center justify-center gap-2">
+                        <i data-lucide="refresh-cw" class="w-3 h-3"></i> REROLL
+                    </button>
+                </div>
+            </div>
+
+            <div id="loading-state" class="hidden flex flex-col items-center justify-center py-20">
+                <div class="w-64 h-32 border-4 border-white bg-black flex items-center justify-center relative shadow-[8px_8px_0_#000]">
+                    <div class="absolute top-2 left-2 w-2 h-2 bg-red-500 animate-pulse"></div>
+                    <div class="text-center">
+                        <p class="text-cyan-400 font-mono text-xl animate-pulse">CONNECTING...</p>
+                        <p class="text-slate-500 text-sm mt-2">> AWAITING GEMINI RESPONSE</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8"></div>
+        </div>
+    </main>
+
+    <script>
+        const app = {
+            state: {
+                step: 1,
+                apiKey: '',
+                model: 'gemini-1.5-flash',
+                stats: { tech: 50, lead: 50, create: 50, comm: 50, anal: 50 },
+                weaknesses: ['Public Speaking'],
+                availableWeaknesses: ["Public Speaking", "Time Mgmt", "Delegation", "Perfectionism", "Impatience", "Overthinking", "Stubbornness"],
+                tags: []
+            },
+
+            init() {
+                const savedKey = localStorage.getItem('cq_gemini_key');
+                const savedModel = localStorage.getItem('cq_model');
+                if (savedKey) { this.state.apiKey = savedKey; document.getElementById('api-key').value = savedKey; }
+                else { setTimeout(() => this.toggleSettings(), 500); }
+                if (savedModel) { this.state.model = savedModel; document.getElementById('model-name').value = savedModel; }
+                
+                this.updateApiStatus();
+                this.setupTagInput();
+                this.renderWeaknesses();
+                this.drawRadar();
+                lucide.createIcons();
+            },
+
+            toggleSettings() { document.getElementById('settings-modal').classList.toggle('hidden'); },
+            saveSettings() {
+                this.state.apiKey = document.getElementById('api-key').value.trim();
+                this.state.model = document.getElementById('model-name').value.trim() || 'gemini-1.5-flash';
+                localStorage.setItem('cq_gemini_key', this.state.apiKey);
+                localStorage.setItem('cq_model', this.state.model);
+                this.updateApiStatus();
+                this.toggleSettings();
+            },
+
+            updateApiStatus() {
+                const dot = document.getElementById('status-dot');
+                const text = document.getElementById('status-text');
+                if (this.state.apiKey) {
+                    dot.className = "w-2 h-2 bg-green-500";
+                    text.innerText = "ONLINE";
+                    text.className = "text-green-400 uppercase";
+                } else {
+                    dot.className = "w-2 h-2 bg-red-500 animate-pulse";
+                    text.innerText = "OFFLINE";
+                    text.className = "text-red-400 uppercase";
+                }
+            },
+
+            geoLocate() {
+                if (!navigator.geolocation) {
+                    alert("SYSTEM ERROR: GPS HARDWARE MISSING.");
+                    return;
+                }
+                const btn = document.getElementById('gps-btn');
+                const originalContent = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>';
+                lucide.createIcons();
+                btn.disabled = true;
+
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        document.getElementById('location-input').value = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+                        btn.innerHTML = originalContent;
+                        btn.disabled = false;
+                        lucide.createIcons();
+                    },
+                    (err) => {
+                        alert(`GPS ERROR: ${err.message}`);
+                        btn.innerHTML = originalContent;
+                        btn.disabled = false;
+                        lucide.createIcons();
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            },
+
+            setupTagInput() {
+                const input = document.getElementById('tag-input');
+                const container = document.getElementById('tags-container');
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && input.value.trim() !== '') {
+                        const tag = input.value.trim().toUpperCase();
+                        this.state.tags.push(tag);
+                        const chip = document.createElement('div');
+                        chip.className = 'bg-purple-900 border-2 border-purple-400 text-white px-2 py-1 text-sm flex items-center gap-2 cursor-pointer hover:bg-red-900';
+                        chip.innerHTML = `<span>${tag}</span><span class="text-[10px]">X</span>`;
+                        chip.onclick = () => { this.state.tags = this.state.tags.filter(t => t !== tag); chip.remove(); };
+                        container.insertBefore(chip, input);
+                        input.value = '';
+                    }
+                });
+            },
+
+            renderWeaknesses() {
+                const container = document.getElementById('weakness-container');
+                container.innerHTML = this.state.availableWeaknesses.map(w => {
+                    const isSelected = this.state.weaknesses.includes(w);
+                    return `<div onclick="app.toggleWeakness('${w}')" class="chip px-3 py-2 border-2 text-sm font-bold shadow-[2px_2px_0_#000] ${isSelected ? 'bg-red-600 border-white text-white' : 'bg-slate-800 border-slate-600 text-slate-400'}">${isSelected ? '[x]' : '[ ]'} ${w}</div>`;
+                }).join('');
+            },
+
+            toggleWeakness(val) {
+                if (this.state.weaknesses.includes(val)) this.state.weaknesses = this.state.weaknesses.filter(w => w !== val);
+                else this.state.weaknesses.push(val);
+                this.renderWeaknesses();
+            },
+
+            updateStat(key, val) {
+                this.state.stats[key] = parseInt(val);
+                document.getElementById(`val-${key}`).innerText = val;
+                this.drawRadar();
+            },
+
+            drawRadar() {
+                const canvas = document.getElementById('radarCanvas');
+                const ctx = canvas.getContext('2d');
+                const w = 300, h = 300, cx = 150, cy = 150, radius = 100;
+                ctx.fillStyle = "#001100"; ctx.fillRect(0, 0, w, h);
+                const sides = 5, angleStep = (Math.PI * 2) / sides;
+                ctx.strokeStyle = '#004400';
+                for (let r = 25; r <= radius; r += 25) {
+                    ctx.beginPath();
+                    for (let i = 0; i < sides; i++) {
+                        const angle = i * angleStep - Math.PI / 2;
+                        const x = cx + Math.cos(angle) * r, y = cy + Math.sin(angle) * r;
+                        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                    }
+                    ctx.closePath(); ctx.stroke();
+                }
+                const stats = [this.state.stats.tech, this.state.stats.lead, this.state.stats.create, this.state.stats.comm, this.state.stats.anal];
+                ctx.beginPath(); ctx.fillStyle = 'rgba(0, 255, 0, 0.4)'; ctx.strokeStyle = '#00ff00'; ctx.lineWidth = 3;
+                stats.forEach((val, i) => {
+                    const angle = i * angleStep - Math.PI / 2;
+                    const r = (val / 100) * radius;
+                    if (i === 0) ctx.moveTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+                    else ctx.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+                });
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+            },
+
+            nextStep(step) {
+                ['view-stats', 'view-logistics', 'view-results'].forEach(id => document.getElementById(id).classList.add('hidden'));
+                const viewMap = { 1: 'view-stats', 2: 'view-logistics', 3: 'view-results' };
+                document.getElementById(viewMap[step]).classList.remove('hidden');
+                if(step === 1) setTimeout(() => this.drawRadar(), 100);
+            },
+
+            async startQuest() {
+                if (!this.state.apiKey) { alert("API KEY MISSING!"); this.toggleSettings(); return; }
+                this.nextStep(3);
+                const loader = document.getElementById('loading-state'), grid = document.getElementById('results-grid');
+                loader.classList.remove('hidden'); grid.innerHTML = '';
+                
+                const loc = document.getElementById('location-input').value || 'REMOTE';
+                const pay = document.getElementById('pay-input').value || '0';
+                const prompt = `Act as a 16-bit RPG Guild Master. Generate 3 Job Quests for: Stats ${JSON.stringify(this.state.stats)}, Debuffs: ${this.state.weaknesses.join(',')}, Skills: ${this.state.tags.join(',')}, Location: ${loc}, Pay: ${pay}. ONLY generate jobs in ${loc}. Format: JSON array of objects [{title, company, matchScore, description, perks (array of strings), salary}]`;
+
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.state.model}:generateContent?key=${this.state.apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    const data = await response.json();
+                    const rawText = data.candidates[0].content.parts[0].text;
+                    const jsonString = rawText.substring(rawText.indexOf('['), rawText.lastIndexOf(']') + 1);
+                    this.renderJobs(JSON.parse(jsonString));
+                } catch (err) {
+                    alert("FETCH FAILED: " + err.message);
+                    this.nextStep(2);
+                } finally { loader.classList.add('hidden'); }
+            },
+
+            renderJobs(jobs) {
+                const grid = document.getElementById('results-grid');
+                jobs.forEach(job => {
+                    // FIX: Ensure perks is always an array to prevent .map() errors
+                    const perks = Array.isArray(job.perks) ? job.perks : [];
+                    
+                    const card = document.createElement('div');
+                    card.className = 'pixel-box p-6 flex flex-col h-full fade-in hover:border-cyan-400';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-4 border-b-2 border-slate-700 pb-2">
+                            <h3 class="pixel-header text-white">${job.title || 'Unknown Role'}</h3>
+                            <span class="text-xl font-bold text-green-400">${job.matchScore || '?'}%</span>
+                        </div>
+                        <p class="text-slate-400 text-xs mb-4 uppercase"><i data-lucide="building-2" class="w-3 h-3 inline"></i> ${job.company || 'Unknown Guild'}</p>
+                        <p class="text-slate-300 flex-grow font-mono mb-4">${job.description || 'No description provided.'}</p>
+                        <div class="bg-black border border-slate-700 p-2 text-yellow-400 font-mono mb-4">$ ${job.salary || 'Negotiable'}</div>
+                        <div class="flex flex-wrap gap-2 mb-4">${perks.map(p => `<span class="text-[10px] bg-slate-800 px-2 py-1 border border-slate-600 uppercase">${p}</span>`).join('')}</div>
+                        <a href="https://www.google.com/search?q=${encodeURIComponent((job.title || '') + ' ' + (job.company || ''))}" target="_blank" class="pixel-btn w-full py-3">ACCEPT QUEST</a>
+                    `;
+                    grid.appendChild(card);
+                });
+                lucide.createIcons();
+            },
+
+            reset() { if(confirm("ABORT MISSION?")) location.reload(); }
+        };
+        window.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>
